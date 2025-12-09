@@ -149,6 +149,13 @@ def main():
                     speak("The buzzer is ringing.")
                 elif "who are you" in command:
                     speak("I am Titan, your Personal Assistant.")
+                elif "what can you do" in command or "what are your capabilities" in command or "list capabilities" in command or "show capabilities" in command:
+                    speak("I am Titan, your personal assistant. I can help you with many things.")
+                    speak("I can manage user faces with recognition, tell you the time, and control system volume and brightness.")
+                    speak("I can check battery status, connect to WiFi, and search the web on Google, YouTube, or Spotify.")
+                    speak("I can open and close applications, get weather information, and play music.")
+                    speak("I can also shutdown or reboot the system, ring your smoke detector buzzer, and send email alerts for unknown faces.")
+                    speak("For a detailed list, please check the README file.")
                 elif "hello" in command:
                     speak(f"Hello, {recognized_name}! How are you?")
                 elif "time" in command:
