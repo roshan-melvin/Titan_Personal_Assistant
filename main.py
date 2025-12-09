@@ -150,23 +150,12 @@ def main():
                 elif "who are you" in command:
                     speak("I am Titan, your Personal Assistant.")
                 elif "what can you do" in command or "help" in command or "capabilities" in command:
-                    capabilities = (
-                        "I am Titan, your personal assistant. Here are my capabilities: "
-                        "1. Face recognition and user management - I can add new faces, delete faces, and list registered users. "
-                        "2. Time information - Ask me for the current time. "
-                        "3. System volume control - Set, increase, decrease, mute or unmute system volume. "
-                        "4. Screen brightness control - Set or get current brightness level. "
-                        "5. Battery status - Check battery percentage. "
-                        "6. WiFi connection - Connect to WiFi networks. "
-                        "7. Web searches - Search on Google, YouTube, or Spotify. "
-                        "8. Application control - Open or close applications like Notepad and Calculator. "
-                        "9. Weather information - Get current weather for your location. "
-                        "10. Music playback - Play music from your library. "
-                        "11. System control - Shutdown or reboot the system. "
-                        "12. Smoke detector - Ring the buzzer to locate your smoke detector. "
-                        "13. Security - Capture and email photos/videos of unknown faces."
-                    )
-                    speak(capabilities)
+                    speak("I am Titan, your personal assistant. I can help you with many things.")
+                    speak("I can manage user faces with recognition, tell you the time, and control system volume and brightness.")
+                    speak("I can check battery status, connect to WiFi, and search the web on Google, YouTube, or Spotify.")
+                    speak("I can open and close applications, get weather information, and play music.")
+                    speak("I can also shutdown or reboot the system, ring your smoke detector buzzer, and send email alerts for unknown faces.")
+                    speak("For a detailed list, please check the README file.")
                 elif "hello" in command:
                     speak(f"Hello, {recognized_name}! How are you?")
                 elif "time" in command:
