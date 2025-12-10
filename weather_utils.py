@@ -1,5 +1,6 @@
 # weather_utils.py
 
+import os
 import requests
 from urllib.parse import quote
 
@@ -18,7 +19,6 @@ def get_location():
 
 def get_weather(city):
     """Get weather information for a city and return as a string."""
-    import os
     api_key = os.getenv('WEATHER_API_KEY', '')
     if not api_key:
         return "Weather API key not configured. Please set WEATHER_API_KEY environment variable."

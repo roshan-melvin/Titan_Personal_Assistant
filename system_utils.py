@@ -8,6 +8,9 @@ from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import math
 
+# Constants
+MIN_DB_VALUE = -96.0  # Minimum decibel value for volume
+
 # Audio functions
 def dB_to_linear(dB):
     """Convert decibels to linear scale."""
@@ -16,7 +19,7 @@ def dB_to_linear(dB):
 def linear_to_dB(linear):
     """Convert linear scale to decibels."""
     if linear <= 0:
-        return -96.0  # Minimum dB value
+        return MIN_DB_VALUE
     return 20 * math.log10(linear)
 
 def set_system_volume(level):
