@@ -12,13 +12,21 @@ MODULES_DIR = os.path.join(SCRIPT_DIR, 'Modules')
 # Load the shape predictor model
 shape_predictor_path = os.path.join(MODULES_DIR, 'shape_predictor_68_face_landmarks.dat')
 if not os.path.exists(shape_predictor_path):
-    raise FileNotFoundError(f"Shape predictor model not found at: {shape_predictor_path}")
+    raise FileNotFoundError(
+        f"Shape predictor model not found at: {shape_predictor_path}\n"
+        f"Please download from: http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2\n"
+        f"Extract and place in: {MODULES_DIR}"
+    )
 shape_predictor = dlib.shape_predictor(shape_predictor_path)
 
 # Load the face recognition model
 face_rec_model_path = os.path.join(MODULES_DIR, 'dlib_face_recognition_resnet_model_v1.dat')
 if not os.path.exists(face_rec_model_path):
-    raise FileNotFoundError(f"Face recognition model not found at: {face_rec_model_path}")
+    raise FileNotFoundError(
+        f"Face recognition model not found at: {face_rec_model_path}\n"
+        f"Please download from: http://dlib.net/files/dlib_face_recognition_resnet_model_v1.dat.bz2\n"
+        f"Extract and place in: {MODULES_DIR}"
+    )
 face_rec_model = dlib.face_recognition_model_v1(face_rec_model_path)
 
 def encode_face(image, face_location):

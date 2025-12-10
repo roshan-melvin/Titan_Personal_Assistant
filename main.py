@@ -25,6 +25,10 @@ PASSCODE = "hyper"  # Passcode for sensitive operations
 UNKNOWN_FACE_IMAGE = "unknown_face.jpg"
 UNKNOWN_FACE_VIDEO = "unknown_face.mp4"
 
+# Regex patterns for command parsing
+PATTERN_OPEN_APP = r"open application (.+)"
+PATTERN_CLOSE_APP = r"close application (.+)"
+
 def send_email_with_attachments(subject, body, sender_email, password, receiver_email, attachments):
     """Send an email with file attachments."""
     if not sender_email or not password:
@@ -170,8 +174,15 @@ def register_new_user(known_encodings):
 def main():
     known_encodings = load_known_encodings()
     # Load credentials from environment variables for security
-    owner_email = os.getenv("OWNER_EMAIL", "your_email@example.com")
-    owner_password = os.getenv("OWNER_EMAIL_PASSWORD", "your_app_password_here")
+    owner_email = os.getenv("OWNER_EMAIL")
+    owner_password = os.getenv("OWNER_EMAIL_PASSWORD")
+    
+    # Validate required environment variables
+    if not owner_email or not owner_password:
+        print("Warning: Email credentials not configured. Email alerts will be disabled.")
+        print("Please set OWNER_EMAIL and OWNER_EMAIL_PASSWORD environment variables.")
+        owner_email = None
+        owner_password = None
 
     if not known_encodings:
         register_new_user(known_encodings)
@@ -335,7 +346,7 @@ def main():
                     else:
                         speak("No search query provided.")
                 elif "open application" in command:
-                    match = re.search(r"open application (.+)", command)
+                    match = re.search(PATTERN_OPEN_APP, command)
                     if match:
                         app_name = match.group(1)
                         if open_application(app_name):
@@ -345,7 +356,7 @@ def main():
                     else:
                         speak("Please specify which application to open.")
                 elif "close application" in command:
-                    match = re.search(r"close application (.+)", command)
+                    match = re.search(PATTERN_CLOSE_APP, command)
                     if match:
                         app_name = match.group(1)
                         if close_application(app_name):
