@@ -17,6 +17,7 @@ def get_location():
         return 'Unknown'
 
 def get_weather(city):
+    """Get weather information for a city and return as a string."""
     api_key = '23396aeb8098b60c343f93b12ca2a694'  # Replace with your valid API key
     url = f"http://api.openweathermap.org/data/2.5/weather?q={quote(city)}&appid={api_key}&units=metric"
     
@@ -28,9 +29,9 @@ def get_weather(city):
         if data.get('cod') == 200:
             temp = data['main']['temp']
             description = data['weather'][0]['description']
-            speak(f"The current weather in {city} is {description} with a temperature of {temp} degrees Celsius.")
+            return f"{description} with a temperature of {temp} degrees Celsius"
         else:
-            speak(f"Failed to retrieve weather information. Error code: {data.get('cod')}.")
+            return f"Failed to retrieve weather information. Error code: {data.get('cod')}"
     except requests.RequestException as e:
-        speak("An error occurred while fetching the weather information.")
-        print(f"Error: {e}")  # Print the error for debugging
+        print(f"Error fetching weather: {e}")  # Print the error for debugging
+        return "An error occurred while fetching the weather information"

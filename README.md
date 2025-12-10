@@ -2,6 +2,26 @@
 
 Titan is a voice-controlled personal assistant with face recognition capabilities. It can help you with various tasks including system control, web searches, and more.
 
+## Setup Instructions
+
+1. **Install Required Dependencies**
+   - Install Python 3.7 or higher
+   - Install required packages (see requirements section below)
+
+2. **Download Face Recognition Models**
+   - Place the following dlib models in the `Modules` folder:
+     - `shape_predictor_68_face_landmarks.dat`
+     - `dlib_face_recognition_resnet_model_v1.dat`
+
+3. **Configure Email Alerts**
+   - Copy `.env.example` to `.env`
+   - Add your email credentials in the `.env` file
+   - For Gmail, use an App Password (not your regular password)
+
+4. **Run the Application**
+   - Execute `python main.py`
+   - Follow the on-screen prompts to register your face
+
 ## Features
 
 1. **Face Recognition** - Recognizes registered users and sends alerts for unknown faces

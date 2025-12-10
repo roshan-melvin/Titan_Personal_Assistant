@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import time
 import re
-from PIL import Image
+import os
 from speech_utils import speak, listen
 from face_recognition_utils import recognize_face, save_face_encoding, load_known_encodings, encode_face, find_closest_match
 from app_utils import open_application, close_application, open_youtube, open_browser, open_spotify
@@ -15,12 +15,23 @@ from system_utils import set_system_volume, mute_system_volume, unmute_system_vo
 from mqtt_utils import ring_buzzer
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email import encoders
-import io
+
+# Constants
+FACE_CAPTURE_TIMEOUT = 15  # seconds to wait for face detection
+VIDEO_DURATION = 5  # seconds of video to record
+PASSCODE = "hyper"  # Passcode for sensitive operations
+UNKNOWN_FACE_IMAGE = "unknown_face.jpg"
+UNKNOWN_FACE_VIDEO = "unknown_face.mp4"
 
 def send_email_with_attachments(subject, body, sender_email, password, receiver_email, attachments):
+    """Send an email with file attachments."""
+    if not sender_email or not password:
+        print("Error: Email credentials not configured")
+        speak("Email credentials are not configured.")
+        return False
+    
     # Create the email
     msg = MIMEMultipart()
     msg['Subject'] = subject
@@ -32,15 +43,20 @@ def send_email_with_attachments(subject, body, sender_email, password, receiver_
 
     # Attach files
     for file_path in attachments:
-        with open(file_path, 'rb') as f:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(f.read())
-            encoders.encode_base64(part)
-            part.add_header(
-                'Content-Disposition',
-                f'attachment; filename= {file_path.split("/")[-1]}',
-            )
-            msg.attach(part)
+        if not os.path.exists(file_path):
+            print(f"Warning: Attachment file not found: {file_path}")
+            continue
+        
+        try:
+            with open(file_path, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+                encoders.encode_base64(part)
+                filename = os.path.basename(file_path)
+                part.add_header('Content-Disposition', f'attachment; filename={filename}')
+                msg.attach(part)
+        except Exception as e:
+            print(f"Error attaching file {file_path}: {e}")
 
     # Send the email
     try:
@@ -52,18 +68,28 @@ def send_email_with_attachments(subject, body, sender_email, password, receiver_
             server.sendmail(sender_email, receiver_email, msg.as_string())
         print("Email sent successfully.")
         speak("Email sent successfully.")
+        return True
     except Exception as e:
         print(f"Error sending email: {e}")
+        speak("Failed to send email alert.")
+        return False
 
-def capture_face_and_video(image_filename, video_filename):
+def capture_face_and_video(image_filename, video_filename, capture_timeout=FACE_CAPTURE_TIMEOUT, video_duration=VIDEO_DURATION):
+    """Capture a face image and video clip from webcam."""
     video_capture = cv2.VideoCapture(0)
+    if not video_capture.isOpened():
+        print("Error: Could not open webcam")
+        return False
+    
     face_detector = dlib.get_frontal_face_detector()
     start_time = time.time()
     face_detected = False
 
     # Capture the face image
-    while (time.time() - start_time) < 15:
+    while (time.time() - start_time) < capture_timeout:
         ret, frame = video_capture.read()
+        if not ret:
+            break
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_locations = face_detector(rgb_frame)
 
@@ -73,10 +99,10 @@ def capture_face_and_video(image_filename, video_filename):
             face_detected = True
             break
 
-    # Record a 5-second video clip
+    # Record a video clip
     video_writer = cv2.VideoWriter(video_filename, cv2.VideoWriter_fourcc(*'XVID'), 20.0, (640, 480))
     start_time = time.time()
-    while (time.time() - start_time) < 5:
+    while (time.time() - start_time) < video_duration:
         ret, frame = video_capture.read()
         if ret:
             video_writer.write(frame)
@@ -87,28 +113,42 @@ def capture_face_and_video(image_filename, video_filename):
 
     return face_detected
 
-def register_new_user(known_encodings):
-    speak("No known faces available. Please show your face to register as a new user.")
+def capture_new_face(known_encodings, timeout=FACE_CAPTURE_TIMEOUT):
+    """Capture and register a new user face."""
     video_capture = cv2.VideoCapture(0)
     start_time = time.time()
     face_detected = False
 
-    while (time.time() - start_time) < 15:
+    while (time.time() - start_time) < timeout:
         ret, frame = video_capture.read()
+        if not ret:
+            break
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_detector = dlib.get_frontal_face_detector()
         face_locations = face_detector(rgb_frame)
 
         for face_location in face_locations:
             new_face_encoding = encode_face(rgb_frame, face_location)
-            speak("Please tell me your name for this new face.")
-            new_name = listen()
-            if new_name:
-                save_face_encoding(new_name, new_face_encoding)
-                known_encodings[new_name] = new_face_encoding  # Update known encodings
-                speak(f"New face for {new_name} has been added.")
+            if new_face_encoding is None:
+                continue
+            
+            existing_name = find_closest_match(new_face_encoding, known_encodings)
+
+            if existing_name:
+                speak(f"You are already recognized as {existing_name}.")
                 face_detected = True
                 break
+            else:
+                speak("Please tell me your name for this new face.")
+                new_name = listen()
+                if new_name:
+                    if save_face_encoding(new_name, new_face_encoding):
+                        known_encodings[new_name] = new_face_encoding
+                        speak(f"New face for {new_name} has been added.")
+                        face_detected = True
+                        break
+                    else:
+                        speak("Failed to save face encoding. Please try again.")
 
         cv2.imshow("Video", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -119,11 +159,19 @@ def register_new_user(known_encodings):
 
     if not face_detected:
         speak("No face detected within the time limit.")
+    
+    return face_detected
+
+def register_new_user(known_encodings):
+    """Register the first user when no known faces exist."""
+    speak("No known faces available. Please show your face to register as a new user.")
+    capture_new_face(known_encodings)
 
 def main():
     known_encodings = load_known_encodings()
-    owner_email = "roshanrockga@gmail.com"  # Replace with actual owner email
-    owner_password = "opci tsop xjqb lpbp"  # Replace with actual owner email password
+    # Load credentials from environment variables for security
+    owner_email = os.getenv("OWNER_EMAIL", "your_email@example.com")
+    owner_password = os.getenv("OWNER_EMAIL_PASSWORD", "your_app_password_here")
 
     if not known_encodings:
         register_new_user(known_encodings)
@@ -243,53 +291,22 @@ def main():
                     reboot_system()
                 elif "add new face" in command:
                     speak("Please show your face for capturing.")
-                    video_capture = cv2.VideoCapture(0)
-                    start_time = time.time()
-                    face_detected = False
-
-                    while (time.time() - start_time) < 15:
-                        ret, frame = video_capture.read()
-                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        face_detector = dlib.get_frontal_face_detector()
-                        face_locations = face_detector(rgb_frame)
-
-                        for face_location in face_locations:
-                            new_face_encoding = encode_face(rgb_frame, face_location)
-                            existing_name = find_closest_match(new_face_encoding, known_encodings)
-
-                            if existing_name:
-                                speak(f"You are already recognized as {existing_name}.")
-                                face_detected = True
-                                break
-                            else:
-                                speak("Please tell me your name for this new face.")
-                                new_name = listen()
-                                if new_name:
-                                    save_face_encoding(new_name, new_face_encoding)
-                                    known_encodings[new_name] = new_face_encoding  # Update known encodings
-                                    speak(f"New face for {new_name} has been added.")
-                                    face_detected = True
-                                    break
-
-                        cv2.imshow("Video", frame)
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                            break
-
-                    video_capture.release()
-                    cv2.destroyAllWindows()
-
-                    if not face_detected:
-                        speak("No face detected within the time limit.")
+                    capture_new_face(known_encodings)
                 elif "delete face" in command:
                     speak("Please provide the passcode to delete a user's face.")
                     passcode = listen()
                     if passcode:
-                        if passcode == "hyper":
+                        if passcode == PASSCODE:
                             speak("Please tell me the name of the user whose face you want to delete.")
                             name_to_delete = listen()
                             if name_to_delete:
-                                delete_user_face(name_to_delete)
-                                speak(f"Face data for {name_to_delete} has been deleted.")
+                                if delete_user_face(name_to_delete):
+                                    # Remove from in-memory encodings as well
+                                    if name_to_delete in known_encodings:
+                                        del known_encodings[name_to_delete]
+                                    speak(f"Face data for {name_to_delete} has been deleted.")
+                                else:
+                                    speak(f"User {name_to_delete} not found.")
                         else:
                             speak("Incorrect passcode.")
                 elif "play music" in command:
@@ -333,21 +350,18 @@ def main():
                     speak("Command not recognized.")
     else:
         speak("Face not recognized. Capturing face and video.")
-        image_file = "unknown_face.jpg"
-        video_file = "unknown_face.mp4"
-
-        face_detected = capture_face_and_video(image_file, video_file)
+        face_detected = capture_face_and_video(UNKNOWN_FACE_IMAGE, UNKNOWN_FACE_VIDEO)
 
         if face_detected:
             subject = "Unknown Face Detected"
             body = "An unknown face was detected. Please find the attached images and video."
-            attachments = [image_file, video_file]
+            attachments = [UNKNOWN_FACE_IMAGE, UNKNOWN_FACE_VIDEO]
             speak("Face Detected")
             send_email_with_attachments(subject, body, owner_email, owner_password, owner_email, attachments)
         else:
-            subject = "Unknown Face Detected"
-            body = "An unknown face was detected. Please find the attached images and video."
-            attachments = [video_file]
+            subject = "Unknown Person Detected"
+            body = "An unknown person was detected but no clear face was captured. Please find the attached video."
+            attachments = [UNKNOWN_FACE_VIDEO]
             speak("No face detected during capture.")
             send_email_with_attachments(subject, body, owner_email, owner_password, owner_email, attachments)
 
