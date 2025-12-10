@@ -10,12 +10,17 @@ import math
 
 # Audio functions
 def dB_to_linear(dB):
+    """Convert decibels to linear scale."""
     return 10 ** (dB / 20.0)
 
 def linear_to_dB(linear):
+    """Convert linear scale to decibels."""
+    if linear <= 0:
+        return -96.0  # Minimum dB value
     return 20 * math.log10(linear)
 
 def set_system_volume(level):
+    """Set system volume to a specific level (0-100)."""
     level = max(0, min(100, level))
     linear_volume = level / 100.0
     volume_dB = linear_to_dB(linear_volume)
@@ -25,10 +30,13 @@ def set_system_volume(level):
         volume_control = cast(interface, POINTER(IAudioEndpointVolume))
         volume_control.SetMasterVolumeLevel(volume_dB, None)
         print(f"Volume set to {level}% ({volume_dB:.2f} dB)")
+        return True
     except Exception as e:
         print(f"Error setting volume: {e}")
+        return False
 
 def get_current_volume():
+    """Get the current system volume level (0-100)."""
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
@@ -41,26 +49,33 @@ def get_current_volume():
         return 50
 
 def mute_system_volume():
+    """Mute the system volume."""
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume_control = cast(interface, POINTER(IAudioEndpointVolume))
         volume_control.SetMute(True, None)
         print("Volume muted.")
+        return True
     except Exception as e:
         print(f"Error muting volume: {e}")
+        return False
 
 def unmute_system_volume():
+    """Unmute the system volume."""
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume_control = cast(interface, POINTER(IAudioEndpointVolume))
         volume_control.SetMute(False, None)
         print("Volume unmuted.")
+        return True
     except Exception as e:
         print(f"Error unmuting volume: {e}")
+        return False
 
 def increase_volume(amount):
+    """Increase system volume by the specified amount."""
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
@@ -71,10 +86,13 @@ def increase_volume(amount):
         volume_control.SetMasterVolumeLevelScalar(new_volume / 100.0, None)
 
         print(f"Volume increased to {new_volume}%")
+        return True
     except Exception as e:
         print(f"Error increasing volume: {e}")
+        return False
 
 def decrease_volume(amount):
+    """Decrease system volume by the specified amount."""
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
@@ -85,21 +103,27 @@ def decrease_volume(amount):
         volume_control.SetMasterVolumeLevelScalar(new_volume / 100.0, None)
 
         print(f"Volume decreased to {new_volume}%")
+        return True
     except Exception as e:
         print(f"Error decreasing volume: {e}")
+        return False
 
 # Brightness functions
 def set_brightness(level):
+    """Set screen brightness to a specific level (0-100)."""
     level = max(0, min(100, level))
     try:
         c = wmi.WMI(namespace='wmi')
         methods = c.WmiMonitorBrightnessMethods()[0]
         methods.WmiSetBrightness(level, 0)
         print(f"Brightness set to {level}%")
+        return True
     except Exception as e:
         print(f"Error setting brightness: {e}")
+        return False
 
 def get_current_brightness():
+    """Get the current screen brightness level (0-100)."""
     try:
         c = wmi.WMI(namespace='wmi')
         brightness = c.WmiMonitorBrightness()[0].CurrentBrightness
@@ -111,23 +135,46 @@ def get_current_brightness():
 
 # System functions
 def connect_to_wifi(ssid, password):
-    command = f'netsh wlan connect name="{ssid}"'
-    os.system(command)
+    """Connect to a Wi-Fi network with the given SSID."""
+    try:
+        command = f'netsh wlan connect name="{ssid}"'
+        result = os.system(command)
+        return result == 0
+    except Exception as e:
+        print(f"Error connecting to Wi-Fi: {e}")
+        return False
 
 def shutdown_system():
-    os.system("shutdown /s /t 1")
+    """Shutdown the system."""
+    try:
+        os.system("shutdown /s /t 1")
+        return True
+    except Exception as e:
+        print(f"Error shutting down system: {e}")
+        return False
 
 def reboot_system():
-    os.system("shutdown /r /t 1")
+    """Reboot the system."""
+    try:
+        os.system("shutdown /r /t 1")
+        return True
+    except Exception as e:
+        print(f"Error rebooting system: {e}")
+        return False
 
 def show_battery_percentage():
-    battery = psutil.sensors_battery()
-    if battery is not None:
-        percent = battery.percent
-        plugged_in = "Plugged in" if battery.power_plugged else "Not plugged in"
-        return f"The battery is at {percent}% ({plugged_in})"
-    else:
-        return "Battery information not available."
+    """Get battery status information."""
+    try:
+        battery = psutil.sensors_battery()
+        if battery is not None:
+            percent = battery.percent
+            plugged_in = "Plugged in" if battery.power_plugged else "Not plugged in"
+            return f"The battery is at {percent}% ({plugged_in})"
+        else:
+            return "Battery information not available."
+    except Exception as e:
+        print(f"Error getting battery status: {e}")
+        return "Unable to retrieve battery information."
 
 # GUI Functions
 def get_wifi_credentials():

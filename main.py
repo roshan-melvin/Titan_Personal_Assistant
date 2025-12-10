@@ -335,11 +335,25 @@ def main():
                     else:
                         speak("No search query provided.")
                 elif "open application" in command:
-                    app_name = re.search(r"open (.+)", command).group(1)
-                    open_application(app_name)
+                    match = re.search(r"open application (.+)", command)
+                    if match:
+                        app_name = match.group(1)
+                        if open_application(app_name):
+                            speak(f"Opening {app_name}.")
+                        else:
+                            speak(f"Unable to open {app_name}.")
+                    else:
+                        speak("Please specify which application to open.")
                 elif "close application" in command:
-                    app_name = re.search(r"close (.+)", command).group(1)
-                    close_application(app_name)
+                    match = re.search(r"close application (.+)", command)
+                    if match:
+                        app_name = match.group(1)
+                        if close_application(app_name):
+                            speak(f"Closing {app_name}.")
+                        else:
+                            speak(f"Unable to close {app_name}.")
+                    else:
+                        speak("Please specify which application to close.")
                 elif "list users" in command:
                     users = list_users()
                     if users:

@@ -2,19 +2,19 @@
 
 import requests
 from urllib.parse import quote
-from speech_utils import speak  # Ensure this import is correct
 
 def get_location():
+    """Get the user's current city based on IP address."""
     ip_info_url = "https://ipinfo.io/json"
     try:
-        response = requests.get(ip_info_url)
+        response = requests.get(ip_info_url, timeout=5)
         response.raise_for_status()
         data = response.json()
         city = data.get('city', 'Unknown')
-        return city
+        return city if city != 'Unknown' else None
     except requests.RequestException as e:
         print(f"Error fetching location: {e}")
-        return 'Unknown'
+        return None
 
 def get_weather(city):
     """Get weather information for a city and return as a string."""
