@@ -11,8 +11,8 @@ def list_users():
     else:
         return []
 
-def delete_user_face(name, passcode=None):
-    """Delete a user's face encoding. Passcode verification is done in main.py."""
+def delete_user_face(name):
+    """Delete a user's face encoding. Note: Passcode verification should be done by the caller."""
     encodings_file = 'encodings.pkl'
     if os.path.exists(encodings_file):
         with open(encodings_file, 'rb') as file:

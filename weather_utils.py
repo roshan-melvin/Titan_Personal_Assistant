@@ -18,7 +18,11 @@ def get_location():
 
 def get_weather(city):
     """Get weather information for a city and return as a string."""
-    api_key = '23396aeb8098b60c343f93b12ca2a694'  # Replace with your valid API key
+    import os
+    api_key = os.getenv('WEATHER_API_KEY', '')
+    if not api_key:
+        return "Weather API key not configured. Please set WEATHER_API_KEY environment variable."
+    
     url = f"http://api.openweathermap.org/data/2.5/weather?q={quote(city)}&appid={api_key}&units=metric"
     
     try:
