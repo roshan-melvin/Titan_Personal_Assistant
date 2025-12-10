@@ -4,26 +4,36 @@ import webbrowser
 def open_application(app_name):
     """Open an application based on the app name."""
     try:
-        if app_name.lower() == "notepad":
+        app_name_lower = app_name.lower().strip()
+        if app_name_lower == "notepad":
             subprocess.Popen(["notepad.exe"])
-        elif app_name.lower() == "calculator":
+            return True
+        elif app_name_lower == "calculator":
             subprocess.Popen(["calc.exe"])
+            return True
         else:
             print(f"Application '{app_name}' is not recognized.")
+            return False
     except Exception as e:
         print(f"Error opening application: {e}")
+        return False
 
 def close_application(app_name):
     """Close an application based on the app name."""
     try:
-        if app_name.lower() == "notepad":
+        app_name_lower = app_name.lower().strip()
+        if app_name_lower == "notepad":
             subprocess.call(["taskkill", "/F", "/IM", "notepad.exe"])
-        elif app_name.lower() == "calculator":
+            return True
+        elif app_name_lower == "calculator":
             subprocess.call(["taskkill", "/F", "/IM", "calc.exe"])
+            return True
         else:
             print(f"Application '{app_name}' is not recognized.")
+            return False
     except Exception as e:
         print(f"Error closing application: {e}")
+        return False
 
 def open_youtube(search_query):
     """Open YouTube with a specific search query."""

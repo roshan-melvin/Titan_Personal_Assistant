@@ -1,23 +1,28 @@
 # weather_utils.py
 
+import os
 import requests
 from urllib.parse import quote
-from speech_utils import speak  # Ensure this import is correct
 
 def get_location():
+    """Get the user's current city based on IP address."""
     ip_info_url = "https://ipinfo.io/json"
     try:
-        response = requests.get(ip_info_url)
+        response = requests.get(ip_info_url, timeout=5)
         response.raise_for_status()
         data = response.json()
         city = data.get('city', 'Unknown')
-        return city
+        return city if city != 'Unknown' else None
     except requests.RequestException as e:
         print(f"Error fetching location: {e}")
-        return 'Unknown'
+        return None
 
 def get_weather(city):
-    api_key = '23396aeb8098b60c343f93b12ca2a694'  # Replace with your valid API key
+    """Get weather information for a city and return as a string."""
+    api_key = os.getenv('WEATHER_API_KEY', '')
+    if not api_key:
+        return "Weather API key not configured. Please set WEATHER_API_KEY environment variable."
+    
     url = f"http://api.openweathermap.org/data/2.5/weather?q={quote(city)}&appid={api_key}&units=metric"
     
     try:
@@ -28,9 +33,9 @@ def get_weather(city):
         if data.get('cod') == 200:
             temp = data['main']['temp']
             description = data['weather'][0]['description']
-            speak(f"The current weather in {city} is {description} with a temperature of {temp} degrees Celsius.")
+            return f"{description} with a temperature of {temp} degrees Celsius"
         else:
-            speak(f"Failed to retrieve weather information. Error code: {data.get('cod')}.")
+            return f"Failed to retrieve weather information. Error code: {data.get('cod')}"
     except requests.RequestException as e:
-        speak("An error occurred while fetching the weather information.")
-        print(f"Error: {e}")  # Print the error for debugging
+        print(f"Error fetching weather: {e}")  # Print the error for debugging
+        return "An error occurred while fetching the weather information"

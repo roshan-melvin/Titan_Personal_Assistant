@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 .env
 .vscode/
+encodings.pkl
+unknown_face.jpg
+unknown_face.mp4
+*.avi
+*.mp4
+*.jpg
+*.png

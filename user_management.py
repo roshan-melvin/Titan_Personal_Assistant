@@ -2,29 +2,27 @@ import pickle
 import os
 from speech_utils import speak 
 def list_users():
+    """Return a list of registered user names."""
     encodings_file = 'encodings.pkl'
     if os.path.exists(encodings_file):
         with open(encodings_file, 'rb') as file:
             known_encodings = pickle.load(file)
-        users = ", ".join(known_encodings.keys())
-        speak(f"Currently recognized users are: {users}")
+        return list(known_encodings.keys())
     else:
-        speak("No users are currently recognized.")
+        return []
 
-def delete_user_face(name, passcode):
-    if passcode == "hyper":
-        encodings_file = 'encodings.pkl'
-        if os.path.exists(encodings_file):
-            with open(encodings_file, 'rb') as file:
-                known_encodings = pickle.load(file)
-            if name in known_encodings:
-                del known_encodings[name]
-                with open(encodings_file, 'wb') as file:
-                    pickle.dump(known_encodings, file)
-                speak(f"Face encoding for {name} has been deleted.")
-            else:
-                speak("No such user found.")
+def delete_user_face(name):
+    """Delete a user's face encoding. Note: Passcode verification should be done by the caller."""
+    encodings_file = 'encodings.pkl'
+    if os.path.exists(encodings_file):
+        with open(encodings_file, 'rb') as file:
+            known_encodings = pickle.load(file)
+        if name in known_encodings:
+            del known_encodings[name]
+            with open(encodings_file, 'wb') as file:
+                pickle.dump(known_encodings, file)
+            return True
         else:
-            speak("No user encodings found.")
+            return False
     else:
-        speak("Incorrect passcode.")
+        return False
